@@ -20,27 +20,25 @@ class Chainable(Generic[T]):
 
     def map(self, mapper: Callable[[T], S]) -> Chainable[S]:
         return Chainable(map(mapper, self))
-    
+
     def filter(self, predicate: Callable[[T], bool]) -> Chainable[T]:
         return Chainable(filter(predicate, self))
-    
-    @overload
-    def reduce(self, reducer: Callable[[T, T], T]) -> T:
-        ...
-    
-    @overload
-    def reduce(self, reducer: Callable[[T, T], T], initial: T) -> T:
-        ...
 
-    def reduce(self, reducer, initial = _initial_missing) -> T:
+    @overload
+    def reduce(self, reducer: Callable[[T, T], T]) -> T: ...
+
+    @overload
+    def reduce(self, reducer: Callable[[T, T], T], initial: T) -> T: ...
+
+    def reduce(self, reducer, initial=_initial_missing) -> T:
         return reduce(reducer, self, _initial_missing)
 
     def any(self, pred: Callable[[T], Any] = lambda x: x) -> bool:
         return any(self.map(pred))
-    
+
     def all(self, pred: Callable[[T], Any] = lambda x: x) -> bool:
         return all(self.map(pred))
-    
+
     def flatten(self):
         return Chainable(chain.from_iterable(self))
 
