@@ -1,16 +1,15 @@
+from __future__ import annotations
+
+from itertools import chain
 from functools import reduce, _initial_missing
-from typing import TypeVar, Callable, overload, Generic
+from typing import TypeVar, Callable, overload, Generic, Any
 from collections.abc import Iterable, Iterator
 
-__all__ = ["Chainable"]
+__all__ = ("Chainable",)
 
 T = TypeVar("T")
 S = TypeVar("S")
 
-def flat_map_helper(self: "Chainable[T]", mapper: Callable[[T], Iterable[S]]) -> Iterator[S]:
-    for val in self:
-        yield from mapper(val)
-    
 
 class Chainable(Generic[T]):
     def __init__(self, it: Iterable[T]) -> None:
@@ -19,10 +18,10 @@ class Chainable(Generic[T]):
     def __iter__(self) -> Iterator[T]:
         return iter(self.it)
 
-    def map(self, mapper: Callable[[T], S]) -> "Chainable[S]":
+    def map(self, mapper: Callable[[T], S]) -> Chainable[S]:
         return Chainable(map(mapper, self))
     
-    def filter(self, predicate: Callable[[T], bool]) -> "Chainable[T]":
+    def filter(self, predicate: Callable[[T], bool]) -> Chainable[T]:
         return Chainable(filter(predicate, self))
     
     @overload
@@ -36,11 +35,14 @@ class Chainable(Generic[T]):
     def reduce(self, reducer, initial = _initial_missing) -> T:
         return reduce(reducer, self, _initial_missing)
 
-    def any(self, pred: Callable[[T], bool]) -> bool:
-        return any(pred(x) for x in self)
+    def any(self, pred: Callable[[T], Any] = lambda x: x) -> bool:
+        return any(self.map(pred))
     
-    def all(self, pred: Callable[[T], bool]) -> bool:
-        return all(pred(x) for x in self)
+    def all(self, pred: Callable[[T], Any] = lambda x: x) -> bool:
+        return all(self.map(pred))
     
-    def flat_map(self, mapper: Callable[[T], Iterable[S]]) -> "Chainable[S]":
-        return Chainable(flat_map_helper(self, mapper))
+    def flatten(self):
+        return Chainable(chain.from_iterable(self))
+
+    def flat_map(self, mapper: Callable[[T], Iterable[S]]) -> Chainable[S]:
+        return self.map(mapper).flatten()
